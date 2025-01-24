@@ -18,7 +18,7 @@ import re
 from io import StringIO
 import csv
 
-if(not os.path.exists("snmp2zabbix.conf")):
+if not os.path.exists("snmp2zabbix.conf"):
     MIB2C_CONFIG = """#Copyright 2020 Sean Bradley https://sbcode.net/zabbix/
 #Licensed under the Apache License, Version 2.0
 @open -@
@@ -73,7 +73,6 @@ DATATYPES = {
     "IN_ADDR_T": "TEXT"
 }
 
-
 def getDataType(s):
     dataType = "TEXT"
     if s.upper() in DATATYPES:
@@ -97,14 +96,14 @@ for l in it:
     description = ""
     if groups is not None:
         if groups.group(1) is not None:
-            description = groups.group(1).encode('string_escape')
+            description = groups.group(1).encode('unicode_escape').decode('utf-8')
             description = description.replace('"', '')
             description = description.replace('\\n', '&#13;')
             description = description.replace('<', '&lt;')
             description = description.replace('>', '&gt;')
             description = re.sub(r"\s\s+", " ", description)
 
-    f = StringIO(u'' + line + '')
+    f = StringIO(line)
     reader = csv.reader(f, delimiter=',')
     for row in reader:
         if len(row) > 0:
@@ -126,37 +125,32 @@ for l in it:
                                         row[1].strip()] = []
                     DISCOVERY_RULES[row[4].strip() + "::" +
                                     row[1].strip()].append(discovery_rule)
-                    LAST_DISCOVERY_RULE_NAME = row[4].strip(
-                    ) + "::" + row[1].strip()
+                    LAST_DISCOVERY_RULE_NAME = row[4].strip() + "::" + row[1].strip()
                 elif row[0] == "enum":
                     print("enum:\t" + row[1].strip() + "=" + row[2].strip())
                     if LAST_ENUM_NAME not in ENUMS:
                         ENUMS[LAST_ENUM_NAME] = []
                     ENUMS[LAST_ENUM_NAME].append(
                         [row[1].strip(), row[2].strip()])
-                    #print("enum " + LAST_ENUM_NAME + " " + row[1].strip() + " " + row[2].strip())
+                    # print("enum " + LAST_ENUM_NAME + " " + row[1].strip() + " " + row[2].strip())
                 elif row[0] == "index":
                     print(
                         "index:\t" + row[4].strip() + "::" + row[1].strip() + "\t" + row[3].strip())
-                    if int(row[7]) == 1:
-                        LAST_ENUM_NAME = row[4].strip() + "::" + row[1].strip()
-                    else:
-                        LAST_ENUM_NAME = row[4].strip() + "::" + row[1].strip()
+                    LAST_ENUM_NAME = row[4].strip() + "::" + row[1].strip()
                 elif row[0] == "nonindex":
                     print(
                         "nonindex:\t" + row[4].strip() + "::" + row[1].strip() + "\t" + row[3].strip())
                     if int(row[7]) == 1:
                         # print(row)
-                        #print("is an enum title : " + row[4].strip() + "::" + row[1].strip())
+                        # print("is an enum title : " + row[4].strip() + "::" + row[1].strip())
                         LAST_ENUM_NAME = row[4].strip() + "::" + row[1].strip()
                         column = [row[4].strip() + "::" + row[1].strip(), row[3].strip(),
                                   getDataType(row[2].strip()), description, LAST_ENUM_NAME]
                         if LAST_DISCOVERY_RULE_NAME == "":
-                            LAST_DISCOVERY_RULE_NAME = row[4].strip(
-                            ) + "::" + row[5].strip()
-                            if not LAST_DISCOVERY_RULE_NAME in DISCOVERY_RULES:
+                            LAST_DISCOVERY_RULE_NAME = row[4].strip() + "::" + row[5].strip()
+                            if LAST_DISCOVERY_RULE_NAME not in DISCOVERY_RULES:
                                 DISCOVERY_RULES[LAST_DISCOVERY_RULE_NAME] = []
-                                #print("need to create discovery rule")
+                                # print("need to create discovery rule")
                                 discovery_rule = [
                                     row[4].strip() + "::" + row[5].strip(), row[3].strip(), [], description]
                                 DISCOVERY_RULES[LAST_DISCOVERY_RULE_NAME].append(
@@ -170,11 +164,10 @@ for l in it:
                         # print(description)
                         # print(len(DISCOVERY_RULES[LAST_DISCOVERY_RULE_NAME][0][2]))
                         if LAST_DISCOVERY_RULE_NAME == "":
-                            LAST_DISCOVERY_RULE_NAME = row[4].strip(
-                            ) + "::" + row[5].strip()
-                            if not LAST_DISCOVERY_RULE_NAME in DISCOVERY_RULES:
+                            LAST_DISCOVERY_RULE_NAME = row[4].strip() + "::" + row[5].strip()
+                            if LAST_DISCOVERY_RULE_NAME not in DISCOVERY_RULES:
                                 DISCOVERY_RULES[LAST_DISCOVERY_RULE_NAME] = []
-                                #print("need to create discovery rule")
+                                # print("need to create discovery rule")
                                 discovery_rule = [
                                     row[4].strip() + "::" + row[5].strip(), row[3].strip(), [], description]
                                 DISCOVERY_RULES[LAST_DISCOVERY_RULE_NAME].append(
@@ -184,10 +177,9 @@ for l in it:
                 # else:
                 #     print("not handled row")
                 #     print(row)
-            except:  # KeyError:
-                #print("KeyError Exception.\nThis tends to happen if your MIB file cannot be found. Check that it exists. Or, your Base OID may be to specific and not found within the MIB file you are converting.\nChoose a Base OID closer to the root.\nEg, If you used 1.3.6.1.4.1, then try 1.3.6.1.4.\nIf the error still occurs, then try 1.3.6.1.\nNote that using a Base OID closer to the root will result in larger template files being generated.")
+            except Exception as e:  # KeyError:
+                # print("KeyError Exception.\nThis tends to happen if your MIB file cannot be found. Check that it exists. Or, your Base OID may be too specific and not found within the MIB file you are converting.\nChoose a Base OID closer to the root.\nEg, If you used 1.3.6.1.4.1, then try 1.3.6.1.4.\nIf the error still occurs, then try 1.3.6.1.\nNote that using a Base OID closer to the root will result in larger template files being generated.")
                 # exit()
-                e = sys.exc_info()[0]
                 print("Exception : %s : %s " % (e, row))
 
 
@@ -212,7 +204,7 @@ XML = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 # SCALARS
-if SCALARS.count > 0:
+if len(SCALARS) > 0:
     XML += """            <items>
 """
 for s in SCALARS:
@@ -238,7 +230,7 @@ for s in SCALARS:
                     <status>DISABLED</status>
                 </item>
 """
-if SCALARS.count > 0:
+if len(SCALARS) > 0:
     XML += """            </items>
 """
 
@@ -253,7 +245,7 @@ XML += """            <macros>
 """
 
 # DISCOVERY RULES
-if len(DISCOVERY_RULES):
+if len(DISCOVERY_RULES) > 0:
     SNMPOIDS = ""
     XML += """            <discovery_rules>
 """
@@ -299,7 +291,7 @@ if len(DISCOVERY_RULES):
 """
                 SNMPOID2APPEND = "{#" + \
                     z[0].split("::")[1].upper() + "}," + z[1] + ","
-                if(len(SNMPOIDS + SNMPOID2APPEND) < 501):
+                if len(SNMPOIDS + SNMPOID2APPEND) < 501:
                     SNMPOIDS += SNMPOID2APPEND
                 XML += """                        </item_prototype>
 """
@@ -308,7 +300,7 @@ if len(DISCOVERY_RULES):
 """
         XML += """                </discovery_rule>
 """
-if len(DISCOVERY_RULES):
+if len(DISCOVERY_RULES) > 0:
     XML += """            </discovery_rules>
 """
 
@@ -316,8 +308,8 @@ XML += """        </template>
     </templates>
 """
 
-#ENUMS
-if len(ENUMS):
+# ENUMS
+if len(ENUMS) > 0:
     XML += """    <value_maps>
 """
     for x in ENUMS:
@@ -334,7 +326,7 @@ if len(ENUMS):
         XML += """            </mappings>
         </value_map>
 """
-if len(ENUMS):
+if len(ENUMS) > 0:
     XML += """    </value_maps>
 """
 
