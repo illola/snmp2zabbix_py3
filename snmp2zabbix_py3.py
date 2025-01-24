@@ -73,6 +73,7 @@ DATATYPES = {
     "IN_ADDR_T": "TEXT"
 }
 
+
 def getDataType(s):
     dataType = "TEXT"
     if s.upper() in DATATYPES:
@@ -195,7 +196,7 @@ XML = """<?xml version="1.0" encoding="UTF-8"?>
                     <name>""" + MIB_NAME + """</name>
                 </application>
             </applications>
-            <description>Created By Sean Bradley's SNMP2ZABBIX.py at https://github.com/Sean-Bradley/SNMP2ZABBIX</description>
+            <description>Created by modifyed snmp2zabbix_py3.py</description>
             <groups>
                 <group>
                     <name>Templates</name>
@@ -219,9 +220,9 @@ for s in SCALARS:
         XML += """                    <value_type>""" + s[2] + """</value_type>
 """
     XML += """                    <description>""" + s[3] + """</description>
-                    <delay>1h</delay>
-                    <history>2w</history>
-                    <trends>0</trends>               
+                    <delay>1m</delay>
+                    <history>7d</history>
+                    <trends>365d</trends>
                     <applications>
                         <application>
                             <name>""" + MIB_NAME + """</name>
@@ -255,7 +256,7 @@ if len(DISCOVERY_RULES) > 0:
 """
         for y in DISCOVERY_RULES[x]:
             XML += """                    <description>""" + y[3] + """</description>
-                    <delay>3600</delay>
+                    <delay>1h</delay>
                     <key>""" + y[1] + """</key>
                     <port>{$SNMP_PORT}</port>
                     <snmp_community>{$SNMP_COMMUNITY}</snmp_community>
@@ -277,9 +278,9 @@ if len(DISCOVERY_RULES) > 0:
                             <snmp_community>{$SNMP_COMMUNITY}</snmp_community>
                             <key>""" + z[1] + """.[{#SNMPINDEX}]</key>
                             <snmp_oid>""" + z[1] + """.{#SNMPINDEX}</snmp_oid>
-                            <delay>1h</delay>
-                            <history>2w</history>
-                            <trends>0</trends>
+                            <delay>1m</delay>
+                            <history>7d</history>
+                            <trends>365d</trends>
 """
                 if z[2] is not None:
                     XML += """                            <value_type>""" + z[2] + """</value_type>
